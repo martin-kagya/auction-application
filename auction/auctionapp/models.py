@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     ROLE_CHOICES = (

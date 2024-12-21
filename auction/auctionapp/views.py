@@ -7,10 +7,12 @@ from rest_framework.decorators import action
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import Item, Bid, Auction, Watchlist, Payment
 from .serializer import (
-    UserSerializer, 
+    UserSerializer,
+    UserProfileSerializer, 
     ItemSerializer, 
     BidSerializer, 
     AuctionSerializer, 
@@ -20,6 +22,7 @@ from .serializer import (
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
+    parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -71,6 +74,41 @@ class UserLoginView(APIView):
             {"message": "Invalid credentials"}, 
             status=status.HTTP_401_UNAUTHORIZED
         )
+    
+class UserInfo(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+    
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        user = request.user
+        user_serializer = self.get_serializer(user)
+        return Response(user_serializer.data)
+    
+    @action(detail=False, methods=['patch'])
+    def update_profile(self, request):
+        user = request.user
+        profile = user.userprofile
+
+        user_serializer = self.get_serializer(user, data=request.data, partial=True)
+        profile_serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+
+        if user_serializer.is_valid() and profile_serializer.is_valid():
+            user_serializer.save()
+            profile_serializer.save()
+            return Response({
+                'user': user_serializer.data,
+                'profile': profile_serializer.data
+            })
+        return Response({
+            'user_errors': user_serializer.errors,
+            'profile_errors': profile_serializer.errors
+        }, status=400)
+
 
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()

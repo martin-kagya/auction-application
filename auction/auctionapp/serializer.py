@@ -8,23 +8,45 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['role', 'profile_picture']
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(read_only=True)
+    profile = UserProfileSerializer(required=False)
 
     class Meta:
         model = User
-        fields =  ['username', 'email', 'profile', 'password']
+        fields = ['username', 'email', 'password', 'first_name', 'last_name', 'profile', 'id']
         extra_kwargs = {
             'email': {'required': True},
-            'username': {'required': True}
+            'username': {'required': True},
+            'password': {'write_only': True},
         }
 
     def create(self, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        profile_picture = profile_data.pop('profile_picture', None)
+        
+
+        # Create the User instance
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
-            password=validated_data['password']
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
         )
+
+            # Save UserProfile instance
+        user_profile, created = UserProfile.objects.update_or_create(
+            user=user,
+            defaults={
+                'role': profile_data.get('role', 'bidder'),
+            }
+        )
+
+            # Handle profile_picture separately
+        if profile_picture:
+            user_profile.profile_picture = profile_picture
+            user_profile.save()
         return user
+
 
 class ItemSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -33,7 +55,7 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = '__all__'
-        read_only_fields = ['highest_bid', 'bid_count', 'start_time']
+        read_only_fields = ['highest_bid', 'bid_count', 'start_time', 'owner', 'price']
 
     def get_time_remaining(self, obj):
         return obj.time_remaining
