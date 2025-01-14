@@ -28,3 +28,4 @@ urlpatterns = [
     # Include router URLs for viewsets
     path('', include(router.urls)),
 ]
+

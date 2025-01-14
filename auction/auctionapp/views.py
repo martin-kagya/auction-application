@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Item, Bid, Auction, Watchlist, Payment
 from .serializer import (
@@ -22,21 +22,21 @@ from .serializer import (
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            
+
             # Create authentication token
             token, _ = Token.objects.get_or_create(user=user)
-            
+
             return Response({
                 'user': UserSerializer(user).data,
                 'token': token.key
             }, status=status.HTTP_201_CREATED)
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):

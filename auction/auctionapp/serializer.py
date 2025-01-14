@@ -1,28 +1,26 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, Item, Bid, Auction, Watchlist, Payment
+from .models import  UserProfile, Item, Bid, Auction, Watchlist, Payment
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(required=False)
     class Meta:
         model = UserProfile
         fields = ['role', 'profile_picture']
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(required=False)
-
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'first_name', 'last_name', 'profile', 'id']
+        fields = ['username', 'email', 'password', 'first_name', 'last_name', 'profile', 'id',]
         extra_kwargs = {
-            'email': {'required': True},
-            'username': {'required': True},
-            'password': {'write_only': True},
-        }
-
+        'email': {'required': True},
+        'username': {'required': True},
+        'password': {'write_only': True},
+         }
+        
     def create(self, validated_data):
         profile_data = validated_data.pop('profile', {})
-        profile_picture = profile_data.pop('profile_picture', None)
-        
 
         # Create the User instance
         user = User.objects.create_user(
@@ -33,18 +31,15 @@ class UserSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
         )
 
-            # Save UserProfile instance
+        # Create or update the UserProfile instance
         user_profile, created = UserProfile.objects.update_or_create(
             user=user,
             defaults={
                 'role': profile_data.get('role', 'bidder'),
+                'profile_picture': profile_data.get('profile_picture', None),
             }
         )
 
-            # Handle profile_picture separately
-        if profile_picture:
-            user_profile.profile_picture = profile_picture
-            user_profile.save()
         return user
 
 

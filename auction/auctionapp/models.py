@@ -12,7 +12,7 @@ class UserProfile(models.Model):
         ('Bidder', 'bidder'), 
         ('Seller', 'seller')
     )
-    role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='bidder')
+    role = models.CharField(max_length=30, choices=ROLE_CHOICES, default=ROLE_CHOICES[0][0])
     profile_picture = models.ImageField(
         upload_to='profile_pics/', 
         blank=True, 
@@ -21,6 +21,7 @@ class UserProfile(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
